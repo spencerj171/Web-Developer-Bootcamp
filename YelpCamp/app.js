@@ -1,63 +1,69 @@
-let express = require('express'),
-    app = express(),
-    bodyParser = require("body-parser"),
-    mongoose = require('mongoose');
+var express     = require("express"),
+    app         = express(),
+    bodyParser  = require("body-parser"),
+    mongoose    = require("mongoose"),
+    passport    = require("passport"),
+    cookieParser = require("cookie-parser"),
+    LocalStrategy = require("passport-local"),
+    flash        = require("connect-flash"),
+    Campground  = require("./models/campground"),
+    Comment     = require("./models/comment"),
+    User        = require("./models/user"),
+    session = require("express-session"),
+    seedDB      = require("./seeds"),
+    methodOverride = require("method-override");
+// configure dotenv
+require('dotenv').load();
 
-mongoose.connect('mongodb://localhost/yelp_camp');
+//requiring routes
+var commentRoutes    = require("./routes/comments"),
+    campgroundRoutes = require("./routes/campgrounds"),
+    indexRoutes      = require("./routes/index")
+
+// assign mongoose promise library and connect to database
+mongoose.Promise = global.Promise;
+
+const databaseUri = process.env.MONGODB_URI || 'mongodb://localhost/yelp_camp';
+
+mongoose.connect(databaseUri, { useMongoClient: true })
+      .then(() => console.log(`Database connected`))
+      .catch(err => console.log(`Database connection error: ${err.message}`));
+
 app.use(bodyParser.urlencoded({extended: true}));
-app.set('view engine', 'ejs');
+app.set("view engine", "ejs");
+app.use(express.static(__dirname + "/public"));
+app.use(methodOverride('_method'));
+app.use(cookieParser('secret'));
+//require moment
+app.locals.moment = require('moment');
+// seedDB(); //seed the database
 
-let campgroundSchema = new mongoose.Schema({
-  name: String,
-  image: String,
-  description: String
+// PASSPORT CONFIGURATION
+app.use(require("express-session")({
+    secret: "Once again Rusty wins cutest dog!",
+    resave: false,
+    saveUninitialized: false
+}));
+
+app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
+
+app.use(function(req, res, next){
+   res.locals.currentUser = req.user;
+   res.locals.success = req.flash('success');
+   res.locals.error = req.flash('error');
+   next();
 });
 
-let Campground = mongoose.model("Campground", campgroundSchema);
 
-app.get("/", function(req, res){
-  res.render('landing');
-});
-
-app.get('/campgrounds', function(req, res){
-  Campground.find({}, function(err, campgrounds){
-    if(err){
-      console.log(err);
-    } else{
-      res.render('index', {campgrounds:campgrounds});
-    }
-  });
-});
-
-app.post("/campgrounds", function(req, res){
-  let name = req.body.name;
-  let image = req.body.image;
-  let desc = req.body.description;
-  let newCampground = {name: name, image: image, description: desc};
-
-  Campground.create(newCampground, function(err, newlyCreated){
-    if(err){
-      console.log(err);
-    } else{
-      res.redirect("/campgrounds");
-    }
-  });
-});
-
-app.get("/campgrounds/new", function(req, res){
-  res.render("new.ejs");
-});
-
-app.get("/campgrounds/:id", function(req, res){
-  Campground.findById(req.params.id, function(err, foundCampground){
-    if(err){
-      console.log(err);
-    } else{
-      res.render('show', {campground: foundCampground});
-    }
-  });
-});
+app.use("/", indexRoutes);
+app.use("/campgrounds", campgroundRoutes);
+app.use("/campgrounds/:id/comments", commentRoutes);
 
 app.listen(3000, function(){
-  console.log("server started");
+   console.log("The YelpCamp Server Has Started!");
 });
