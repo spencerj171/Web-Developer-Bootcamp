@@ -1,4 +1,4 @@
-var express     = require("express"),
+let express     = require("express"),
     app         = express(),
     bodyParser  = require("body-parser"),
     mongoose    = require("mongoose"),
@@ -15,7 +15,7 @@ var express     = require("express"),
 
 require('dotenv').load();
 
-var commentRoutes    = require("./routes/comments"),
+let commentRoutes    = require("./routes/comments"),
     campgroundRoutes = require("./routes/campgrounds"),
     indexRoutes      = require("./routes/index")
 
