@@ -12,39 +12,36 @@ var express     = require("express"),
     session = require("express-session"),
     seedDB      = require("./seeds"),
     methodOverride = require("method-override");
-// configure dotenv
+
 require('dotenv').load();
 
-//requiring routes
 var commentRoutes    = require("./routes/comments"),
     campgroundRoutes = require("./routes/campgrounds"),
     indexRoutes      = require("./routes/index")
 
-// assign mongoose promise library and connect to database
 mongoose.Promise = global.Promise;
 
 const databaseUri = process.env.MONGODB_URI || 'mongodb://localhost/yelp_camp';
 
 mongoose.connect(databaseUri, { useMongoClient: true })
-      .then(() => console.log(`Database connected`))
-      .catch(err => console.log(`Database connection error: ${err.message}`));
+  .then(() => console.log(`Database connected`))
+  .catch(err => console.log(`Database connection error: ${err.message}`));
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 app.use(express.static(__dirname + "/public"));
 app.use(methodOverride('_method'));
 app.use(cookieParser('secret'));
-//require moment
-app.locals.moment = require('moment');
-// seedDB(); //seed the database
 
-// PASSPORT CONFIGURATION
+app.locals.moment = require('moment');
+
 app.use(require("express-session")({
-    secret: "Once again Rusty wins cutest dog!",
-    resave: false,
-    saveUninitialized: false
+  secret: "Don't look at me, I'm a secret",
+  resave: false,
+  saveUninitialized: false
 }));
 
+//seedDB();
 app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
@@ -53,10 +50,10 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 app.use(function(req, res, next){
-   res.locals.currentUser = req.user;
-   res.locals.success = req.flash('success');
-   res.locals.error = req.flash('error');
-   next();
+ res.locals.currentUser = req.user;
+ res.locals.success = req.flash('success');
+ res.locals.error = req.flash('error');
+ next();
 });
 
 
@@ -65,5 +62,5 @@ app.use("/campgrounds", campgroundRoutes);
 app.use("/campgrounds/:id/comments", commentRoutes);
 
 app.listen(3000, function(){
-   console.log("The YelpCamp Server Has Started!");
+  console.log("The YelpCamp Server Has Started!");
 });

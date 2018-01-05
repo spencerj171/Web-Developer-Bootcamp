@@ -1,5 +1,5 @@
 $('#campground-search').on('input', function() {
-  var search = $(this).serialize();
+  let search = $(this).serialize();
   if(search === "search=") {
     search = "all"
   }
